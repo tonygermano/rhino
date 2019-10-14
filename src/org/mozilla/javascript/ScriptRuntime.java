@@ -137,7 +137,7 @@ public class ScriptRuntime {
         Scriptable.class;
 
     // Locale object used to request locale-neutral operations.
-    public static Locale ROOT_LOCALE = new Locale("");
+    public static final Locale ROOT_LOCALE = new Locale("");
 
     private static final Object LIBRARY_SCOPE_KEY = "LIBRARY_SCOPE";
 
@@ -4181,7 +4181,7 @@ public class ScriptRuntime {
         String getMessage(String messageId, Object[] arguments);
     }
 
-    public static MessageProvider messageProvider = new DefaultMessageProvider();
+    public static final MessageProvider messageProvider = new DefaultMessageProvider();
 
     public static String getMessage(String messageId, Object[] arguments)
     {

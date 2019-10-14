@@ -996,14 +996,7 @@ public class NativeArray extends IdScriptableObject implements List
                         result.append(ScriptRuntime.uneval(cx, scope, elem));
 
                     } else if (elem instanceof String) {
-                        String s = (String)elem;
-                        if (toSource) {
-                            result.append('\"');
-                            result.append(ScriptRuntime.escapeString(s));
-                            result.append('\"');
-                        } else {
-                            result.append(s);
-                        }
+                        result.append((String)elem);
 
                     } else {
                         if (toLocale) {
