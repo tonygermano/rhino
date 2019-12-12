@@ -198,7 +198,7 @@ public final class NativeJSON extends IdScriptableObject
             this.space = space;
         }
 
-        Stack<Scriptable> stack = new Stack<Scriptable>();
+        Stack<Object> stack = new Stack<Object>();
         String indent;
         String gap;
         Callable replacer;
@@ -339,10 +339,14 @@ public final class NativeJSON extends IdScriptableObject
     }
 
     private static String jo(Scriptable value, StringifyState state) {
-        if (state.stack.search(value) != -1) {
-            throw ScriptRuntime.typeError0("msg.cyclic.value");
+        Object trackValue = value;
+        if (value instanceof Wrapper) {
+                trackValue = ((Wrapper) value).unwrap();
         }
-        state.stack.push(value);
+        if (state.stack.search(trackValue) != -1) {
+                throw ScriptRuntime.typeError0("msg.cyclic.value");
+        }
+        state.stack.push(trackValue);
 
         String stepback = state.indent;
         state.indent = state.indent + state.gap;
@@ -388,10 +392,14 @@ public final class NativeJSON extends IdScriptableObject
     }
 
     private static String ja(NativeArray value, StringifyState state) {
-        if (state.stack.search(value) != -1) {
-            throw ScriptRuntime.typeError0("msg.cyclic.value");
+        Object trackValue = value;
+        if (value instanceof Wrapper) {
+                trackValue = ((Wrapper) value).unwrap();
         }
-        state.stack.push(value);
+        if (state.stack.search(trackValue) != -1) {
+                throw ScriptRuntime.typeError0("msg.cyclic.value");
+        }
+        state.stack.push(trackValue);
 
         String stepback = state.indent;
         state.indent = state.indent + state.gap;
