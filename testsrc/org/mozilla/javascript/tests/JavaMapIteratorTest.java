@@ -53,6 +53,42 @@ public class JavaMapIteratorTest extends TestCase {
         testJavaMap(js, EXPECTED_KEYS);
     }
 
+    @Test
+    public void testMapWithAccess2() {
+        String js = "var ret = '';\n"
+                + "for(key in map)  ret += map[key] + ',';\n"
+                + "ret";
+        testJsMap(js, EXPECTED_VALUES);
+        testJavaMap(js, EXPECTED_VALUES);
+    }
+
+    // NOTE: signature of forEach is different
+    // EcmaScript Map: forEach(value, key, map)
+    // Java: forEach(key, value)
+    @Test
+    public void testMapForEach1() {
+        String js = "var ret = '';\n"
+                + "map.forEach(function(key) {  ret += key + ',' });\n"
+                + "ret";
+        testJavaMap(js, EXPECTED_KEYS); 
+    }
+    
+    @Test
+    public void testMapForEach2() {
+        String js = "var ret = '';\n"
+                + "map.forEach(function(key, value) {  ret += value + ',' });\n"
+                + "ret";
+        testJavaMap(js, EXPECTED_VALUES); // forEach(key, value)
+    }
+    
+    @Test
+    public void testMapForEach3() {
+        String js = "var ret = '';\n"
+                + "map.forEach(function(key) {  ret += map[key] + ',' });\n"
+                + "ret";
+        testJavaMap(js, EXPECTED_VALUES); 
+    }
+    
     private void testJavaMap(String script, Object expected) {
         Utils.runWithAllOptimizationLevels(cx -> {
             final ScriptableObject scope = cx.initStandardObjects();

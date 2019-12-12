@@ -8,6 +8,10 @@
 
 package org.mozilla.javascript;
 
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Embeddings that wish to provide their own custom wrappings for Java
  * objects may extend this class and call
@@ -42,14 +46,14 @@ public class WrapFactory
      * @return the wrapped value.
      */
     public Object wrap(Context cx, Scriptable scope,
-                       Object obj, Class<?> staticType)
+                       Object obj, Type staticType)
     {
         if (obj == null || obj == Undefined.instance
             || obj instanceof Scriptable)
         {
             return obj;
         }
-        if (staticType != null && staticType.isPrimitive()) {
+        if (staticType instanceof Class && ((Class)staticType).isPrimitive()) {
             if (staticType == Void.TYPE)
                 return Undefined.instance;
             if (staticType == Character.TYPE)
@@ -115,9 +119,15 @@ public class WrapFactory
      * @return the wrapped value which shall not be null
      */
     public Scriptable wrapAsJavaObject(Context cx, Scriptable scope,
-                                       Object javaObject, Class<?> staticType)
+                                       Object javaObject, Type staticType)
     {
-        return new NativeJavaObject(scope, javaObject, staticType);
+        if (javaObject instanceof Map) {
+            return new NativeJavaMapObject(scope, (Map) javaObject, staticType);
+        } else if (javaObject instanceof List) {
+            return new NativeJavaListObject(scope, (List) javaObject, staticType);
+        } else {
+            return new NativeJavaObject(scope, javaObject, staticType);
+        }
     }
 
     /**
