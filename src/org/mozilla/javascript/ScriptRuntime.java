@@ -2920,8 +2920,7 @@ public class ScriptRuntime {
             return Object.class;
 
         } else {
-            String className = type == null ? "null"
-                    : type.getClass().getName();
+            String className = type.getClass().getName();
             throw new IllegalArgumentException("Expected a Class, "
                     + "ParameterizedType, or GenericArrayType, but <"
                     + type + "> is of type " + className);
