@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * @author Roland Praml, FOCONIS AG
  *
  */
-public class NativeJavaListObject<T> extends NativeJavaObject implements List<T> {
+public class NativeJavaListObject<T> extends NativeJavaObject implements List<T>, ArrayScriptable {
 
     private static final long serialVersionUID = 1L;
     private List<T> javaList;
@@ -82,6 +82,11 @@ public class NativeJavaListObject<T> extends NativeJavaObject implements List<T>
         javaList.set(index, (T) Context.jsToJava(value, valueType));
     }
 
+    @Override
+    public long getLength() {
+        return javaList.size();
+    }
+    
     // delegate methods
     public void forEach(Consumer<? super T> action)             { javaList.forEach(action);                     }
     public int size()                                           { return javaList.size();                       }

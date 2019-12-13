@@ -316,8 +316,8 @@ public final class NativeJSON extends IdScriptableObject
         }
 
         if (value instanceof Scriptable && !(value instanceof Callable)) {
-            if (value instanceof NativeArray) {
-                return ja((NativeArray) value, state);
+            if (value instanceof ArrayScriptable) {
+                return ja((ArrayScriptable) value, state);
             }
             return jo((Scriptable) value, state);
         }
@@ -344,7 +344,7 @@ public final class NativeJSON extends IdScriptableObject
                 trackValue = ((Wrapper) value).unwrap();
         }
         if (state.stack.search(trackValue) != -1) {
-                throw ScriptRuntime.typeError0("msg.cyclic.value");
+                throw ScriptRuntime.typeError1("msg.cyclic.value", trackValue.getClass().getName());
         }
         state.stack.push(trackValue);
 
@@ -391,13 +391,13 @@ public final class NativeJSON extends IdScriptableObject
         return finalValue;
     }
 
-    private static String ja(NativeArray value, StringifyState state) {
+    private static String ja(ArrayScriptable value, StringifyState state) {
         Object trackValue = value;
         if (value instanceof Wrapper) {
                 trackValue = ((Wrapper) value).unwrap();
         }
         if (state.stack.search(trackValue) != -1) {
-                throw ScriptRuntime.typeError0("msg.cyclic.value");
+                throw ScriptRuntime.typeError1("msg.cyclic.value", trackValue.getClass().getName());
         }
         state.stack.push(trackValue);
 

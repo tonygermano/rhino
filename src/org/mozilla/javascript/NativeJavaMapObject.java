@@ -56,6 +56,11 @@ public class NativeJavaMapObject<T> extends NativeJavaObject implements Map<Stri
         this(scope, javaMap, staticType, false);
     }
 
+    @Override
+    public Object[] getIds() {
+        return javaMap.keySet().toArray();
+    }
+    
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public Object get(String name, Scriptable start) {
         Object rval = super.get(name, start);

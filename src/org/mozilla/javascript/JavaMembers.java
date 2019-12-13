@@ -16,11 +16,19 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.mozilla.javascript.NativeIterator.WrappedJavaIterator;
 
 /**
  *
@@ -661,6 +669,8 @@ class JavaMembers
             }
         }
 
+        // add toJson-function, if there is not one.
+        members.putIfAbsent("toJSON", ToJsonFunction.INSTANCE);
         // Reflect constructors
         Constructor<?>[] constructors = getAccessibleConstructors(includePrivate);
         MemberBox[] ctorMembers = new MemberBox[constructors.length];
@@ -942,4 +952,40 @@ class FieldAndMethods extends NativeJavaMethod
 
     Field field;
     Object javaObject;
+}
+
+class ToJsonFunction extends BaseFunction
+{
+    private static final long serialVersionUID = 1L;
+    static final ToJsonFunction INSTANCE  = new ToJsonFunction();
+
+    @Override
+    public Object call(Context cx, Scriptable scope, Scriptable thisObj,
+            Object[] args) {
+
+        if (thisObj instanceof NativeJavaMapObject
+                || thisObj instanceof ArrayScriptable) {
+            return thisObj;
+        }
+        Object jo = ((NativeJavaObject) thisObj).javaObject;
+        if (jo instanceof Number
+                || jo instanceof CharSequence 
+                || jo instanceof Boolean
+                || jo instanceof Map
+                || jo instanceof Iterable) {
+            return jo;
+        } else if (jo instanceof Enum) {
+            return ((Enum<?>) jo).name();
+        } else if (jo instanceof java.sql.Date) {
+            jo = ((java.sql.Date) jo).toLocalDate();
+        } else if (jo instanceof java.sql.Time) {
+            jo = ((java.sql.Time) jo).toLocalTime();
+        } else if (jo instanceof java.util.Date) {
+            jo = ((Date) jo).toInstant();
+        } else if (jo instanceof Calendar) {
+            jo = ((Calendar)jo).toInstant();
+        }
+
+        return jo.toString();
+    }
 }
