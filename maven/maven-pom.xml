@@ -12,7 +12,7 @@
   <groupId>org.mozilla</groupId>
   <artifactId>rhino</artifactId>
   <name>Mozilla Rhino</name>
-  <version>1.7.12-SNAPSHOT</version>
+  <version>1.7.12-FOC1</version>
 
   <packaging>jar</packaging>
   <description>
@@ -38,4 +38,13 @@
     <name>The Mozilla Foundation</name>
     <url>http://www.mozilla.org</url>
   </organization>
+  <build>
+    <extensions>
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+        <artifactId>wagon-ssh</artifactId>
+        <version>2.12</version>
+      </extension>
+    </extensions>
+  </build>
 </project>

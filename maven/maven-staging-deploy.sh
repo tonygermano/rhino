@@ -34,18 +34,18 @@ mvn gpg:sign-and-deploy-file \
   -Dfile=${jsjar} \
   -DpomFile=${pom} \
   -DrepositoryId=sonatype-nexus-staging \
-  -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ 
+  -Durl=sftp://bamboo@repo.foconis.de/var/www/html/repo/maven-release/
 
 mvn gpg:sign-and-deploy-file \
   -Dfile=${srczip} \
   -DpomFile=${pom} \
   -DrepositoryId=sonatype-nexus-staging \
-  -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/  \
+  -Durl=sftp://bamboo@repo.foconis.de/var/www/html/repo/maven-release/  \
   -Dclassifier=sources
 
 mvn gpg:sign-and-deploy-file \
   -Dfile=${doczip} \
   -DpomFile=${pom} \
   -DrepositoryId=sonatype-nexus-staging \
-  -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/  \
+  -Durl=sftp://bamboo@repo.foconis.de/var/www/html/repo/maven-release/  \
   -Dclassifier=javadoc

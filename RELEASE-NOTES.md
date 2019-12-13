@@ -1,3 +1,62 @@
+# Rhino 1.7.12-FOC1
+## Dec 13, 2019
+
+Aditya*Pal (1):
+* Fix syntax error for comments in array (#607)
+
+Chris*Smith (1):
+* Adding secure configuration for XML parsers (#600)
+
+Gregory*Brail (7):
+* Update versions for 1.7.12 release.
+* Fix a code generation bug for generators.
+* Fix "fall through" comment.
+* Fix static analysis around NaN values.
+* More isNaN fixes and one rounding bug.
+* Make XML processor configuration more robust.
+* Enable SpotBugs plugin.
+
+Ivan*Di Francesco (1):
+* Fix warnings (#596)
+
+RBRi*(2):
+* Fix issue with parseInt's handling of leading zeroes
+* #529 (#628)
+
+Roland*Praml (7):
+* #511 fixing InterfaceAdapter abstract name lookup.
+* FIX: NativeJavaObject.getDefaultValue recognizes numbers correctly
+* Merge branch 'ignore-non-default-for-interfaces' into roland
+* ADD: iterator support for iterable & map
+* NEW: support for wrapping lists and maps (with extended type support)
+* FIX: recursion detection: https://github.com/mozilla/rhino/issues/460
+* Improved toJSON conversion
+
+Stijn*Kliemesch (5):
+* Private static method ScriptRuntime.enumInitOrder(Context,IdEnumeration) no longer expects given IdEnumeration's property obj to be of type ScriptableObject specifically, only of type SymbolScriptable.
+* Added testclass IterableTest to test iterable implementations, currently with one testcase for a host object, specifically one that uses Array Iterator.
+* Added more tests to IterableTest.
+* Fix for #616 (#617)
+* Fixes for calling several Object.prototype members.
+
+nename0*(2):
+* Fix Array.include return a wrapped Boolean
+* implement Array.includes to align to specs
+
+rbri*(12):
+* fix for Map/Set working with ConsString as key also; closes #583
+* fix propertyIsEnumerable when using an index to access string; closes #582
+* ignore surplus search/match/replace parameters; closes #581
+* add support for setPrototypeOf
+* fixed imports
+* RangeError should be throw if the argument of Number.prototype.toFixed is less than 0 fixes #587
+* fix interpreter fallback when using streams (fixes #592)
+* Parser already always reads the reader into a string. Move this reader handling to the Context to be able to fall back to the interpreter in all cases.
+* fix imports
+* functions declared as var f = function f() {...} within a function should not impact higher scope variable with the same name
+* functions declared as var f = function f() {...} within a function should not impact higher scope variable with the same name
+* fix Boolean(document.all)
+
 # Rhino 1.7.11
 ## May 30, 2019
 
