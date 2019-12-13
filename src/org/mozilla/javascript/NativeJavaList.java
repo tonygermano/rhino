@@ -20,24 +20,22 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 /**
- * Extends the NativeJavaObject to support index based access, if it is an
- * instance of {@link java.util.List}. If possible, the generic type can be
- * specified for
+ * Extends the NativeJavaObject to support index based access for lists.
  *
  * @author Roland Praml, FOCONIS AG
  *
  */
-public class NativeJavaListObject<T> extends NativeJavaObject implements List<T>, ArrayScriptable {
+public class NativeJavaList<T> extends NativeJavaObject implements List<T>, ArrayScriptable {
 
     private static final long serialVersionUID = 1L;
     private List<T> javaList;
     private Class<?> valueType;
 
-    public NativeJavaListObject() {
+    public NativeJavaList() {
         super();
     }
 
-    public NativeJavaListObject(Scriptable scope, List<T> javaList,
+    public NativeJavaList(Scriptable scope, List<T> javaList,
             Type staticType, boolean isAdapter) {
         super(scope, javaList, staticType, isAdapter);
         this.javaList = javaList;
@@ -55,7 +53,7 @@ public class NativeJavaListObject<T> extends NativeJavaObject implements List<T>
 
     }
 
-    public NativeJavaListObject(Scriptable scope, List<T> javaList,
+    public NativeJavaList(Scriptable scope, List<T> javaList,
             Type staticType) {
         this(scope, javaList, staticType, false);
     }

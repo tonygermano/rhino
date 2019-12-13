@@ -16,24 +16,22 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Extends the NativeJavaObject to support index based access, if it is
- * an instance of {@link java.util.List}. If possible, the generic type
- * can be specified for 
+ * Extends the NativeJavaMap to support map based access.
  *
  * @author Roland Praml, FOCONIS AG
  *
  */
-public class NativeJavaMapObject<T> extends NativeJavaObject implements Map<String, T> {
+public class NativeJavaMap<T> extends NativeJavaObject implements Map<String, T> {
 
     private static final long serialVersionUID = 1L;
     private Map<String, T> javaMap;
     private Class<?> valueType;
 
-    public NativeJavaMapObject() {
+    public NativeJavaMap() {
         super();
     }
 
-    public NativeJavaMapObject(Scriptable scope, Map<String, T> javaMap,
+    public NativeJavaMap(Scriptable scope, Map<String, T> javaMap,
             Type staticType, boolean isAdapter) {
         super(scope, javaMap, staticType, isAdapter);
         this.javaMap = javaMap;
@@ -51,7 +49,7 @@ public class NativeJavaMapObject<T> extends NativeJavaObject implements Map<Stri
         
     }
 
-    public NativeJavaMapObject(Scriptable scope, Map<String, T> javaMap,
+    public NativeJavaMap(Scriptable scope, Map<String, T> javaMap,
             Type staticType) {
         this(scope, javaMap, staticType, false);
     }

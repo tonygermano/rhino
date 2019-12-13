@@ -8,7 +8,7 @@ package org.mozilla.javascript;
 
 /**
  * Common interface for {@link NativeArray}, {@link NativeJavaArray} 
- * and {@link NativeJavaListObject}. Required for JSON conversion.
+ * and {@link NativeJavaList}. Required for JSON conversion.
  *
  * @author Roland Praml, FOCONIS AG
  *

@@ -957,7 +957,7 @@ class ToJsonFunction extends BaseFunction
     public Object call(Context cx, Scriptable scope, Scriptable thisObj,
             Object[] args) {
 
-        if (thisObj instanceof NativeJavaMapObject
+        if (thisObj instanceof NativeJavaMap
                 || thisObj instanceof ArrayScriptable) {
             return thisObj;
         }
