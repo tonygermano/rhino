@@ -343,7 +343,7 @@ public abstract class NativeTypedArrayView<T> extends NativeArrayBufferView impl
         String s, fnName = null;
         int arity;
         switch (id) {
-        case Id_constructor:        arity = 1; s = "constructor"; break;
+        case Id_constructor:        arity = 3; s = "constructor"; break;
         case Id_toString:           arity = 0; s = "toString"; break;
         case Id_get:                arity = 1; s = "get"; break;
         case Id_set:                arity = 2; s = "set"; break;
@@ -408,7 +408,10 @@ public abstract class NativeTypedArrayView<T> extends NativeArrayBufferView impl
     @Override
     protected void fillConstructorProperties(IdFunctionObject ctor)
     {
-        ctor.put("BYTES_PER_ELEMENT", ctor, ScriptRuntime.wrapInt(getBytesPerElement()));
+        ctor.defineProperty("BYTES_PER_ELEMENT", ScriptRuntime.wrapInt(getBytesPerElement()),
+                DONTENUM | PERMANENT | READONLY);
+
+        super.fillConstructorProperties(ctor);
     }
 
     // Property dispatcher
@@ -459,6 +462,9 @@ public abstract class NativeTypedArrayView<T> extends NativeArrayBufferView impl
 // #/generated#
         if (id == 0) {
             return super.findInstanceIdInfo(s);
+        }
+        if (id == Id_BYTES_PER_ELEMENT) {
+            return instanceIdInfo(DONTENUM | READONLY | PERMANENT, id);
         }
         return instanceIdInfo(READONLY | PERMANENT, id);
     }
@@ -589,6 +595,9 @@ public abstract class NativeTypedArrayView<T> extends NativeArrayBufferView impl
     @Override
     public boolean equals(Object o)
     {
+        if (o == null) {
+            return false;
+        }
         try {
             NativeTypedArrayView<T> v = (NativeTypedArrayView<T>)o;
             if (length != v.length) {
