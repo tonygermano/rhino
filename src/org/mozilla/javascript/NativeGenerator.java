@@ -96,10 +96,7 @@ public final class NativeGenerator extends IdScriptableObject {
         }
         int id = f.methodId();
 
-        if (!(thisObj instanceof NativeGenerator))
-            throw incompatibleCallError(f);
-
-        NativeGenerator generator = (NativeGenerator) thisObj;
+        NativeGenerator generator = ensureType(thisObj, NativeGenerator.class, f);
 
         switch (id) {
 
@@ -117,7 +114,7 @@ public final class NativeGenerator extends IdScriptableObject {
           case Id_send: {
             Object arg = args.length > 0 ? args[0] : Undefined.instance;
             if (generator.firstTime && !arg.equals(Undefined.instance)) {
-                throw ScriptRuntime.typeError0("msg.send.newborn");
+                throw ScriptRuntime.typeErrorById("msg.send.newborn");
             }
             return generator.resume(cx, scope, GENERATOR_SEND, arg);
           }
@@ -154,7 +151,7 @@ public final class NativeGenerator extends IdScriptableObject {
               // non-reentrant.
               // See https://bugzilla.mozilla.org/show_bug.cgi?id=349263
               if (locked)
-                  throw ScriptRuntime.typeError0("msg.already.exec.gen");
+                  throw ScriptRuntime.typeErrorById("msg.already.exec.gen");
               locked = true;
             }
             return function.resumeGenerator(cx, scope, operation, savedState,

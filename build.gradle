@@ -3,16 +3,22 @@ plugins {
     id 'idea'
     id 'eclipse'
     id 'maven-publish'
+    id 'signing'
     id 'jacoco'
     id 'distribution'
     id 'checkstyle'
-    id 'com.github.spotbugs' version '2.0.0'
+    id 'com.github.spotbugs' version "4.2.4"
 }
 
 tasks.withType(JavaCompile) {
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
     options.encoding = "UTF-8"
+    options.compilerArgs = [ "-Xlint:deprecation,unchecked" ]
+}
+
+compileTestJava {
+    options.compilerArgs = [ ]
 }
 
 repositories {
@@ -40,17 +46,29 @@ sourceSets {
             srcDirs "testsrc"
         }
     }
+
+    jmh {
+        java {
+            srcDirs "benchmarks"
+        }
+        compileClasspath += sourceSets.test.runtimeClasspath
+        runtimeClasspath += sourceSets.test.runtimeClasspath
+    }
 }
 
 dependencies {
-    testCompile "junit:junit:4.12"
-    testCompile "org.yaml:snakeyaml:1.15"
-    testCompile "net.trajano.caliper:caliper:1.2.1"
+    testImplementation "junit:junit:4.13"
+    testImplementation "org.yaml:snakeyaml:1.26"
+    jmhImplementation project
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.23'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.23'
 }
 
 test {
     useJUnit()
     exclude "**/benchmarks/**"
+    
+    jvmArgs += '-Xss1280k'
 
     jacoco.excludes = ['**/testsrc_tests_ecma_3_RegExp_perlstress*']
 
@@ -61,44 +79,44 @@ test {
     systemProperty 'user.country', 'US'
     systemProperty 'user.timezone', 'America/Los_Angeles'
     systemProperty 'file.encoding', 'UTF-8'
+    if (System.getProperty('quick') != null) {
+        systemProperty 'TEST_OPTLEVEL', -1
+    }
     maxHeapSize = "1g"
     testLogging.showStandardStreams = true
     // Many tests do not clean up contexts properly. This makes the tests much
     // more resilient at the expense of performance.
     forkEvery = 1
-    maxParallelForks = 10
+    maxParallelForks = 16
 }
 
 task sunSpiderBenchmark(type: JavaExec) {
-    main "com.google.caliper.runner.CaliperMain"
-    systemProperty 'rhino.benchmark.report', "${buildDir.absolutePath}"
-    args "-Cresults.upload.class=org.mozilla.javascript.benchmarks.ResultPlotter", "-i", "runtime", "org.mozilla.javascript.benchmarks.CaliperSpiderBenchmark.Spider"
-    classpath sourceSets.test.runtimeClasspath
+    classpath = sourceSets.jmh.runtimeClasspath
+    main = 'org.openjdk.jmh.Main'
+    args '-f', '1', '-bm', 'avgt', '-tu', 'us', 'SunSpider'
 }
 
-task v8Benchmark(type: Test) {
-    jacoco {
-        enabled = false
-    }
-    include "**/benchmarks/V8Benchmark*"
-    systemProperty 'rhino.benchmark.report', "${buildDir.absolutePath}"
-    systemProperty 'file.encoding', 'UTF-8'
-    workingDir = file("testsrc/benchmarks")
-    maxHeapSize = "1g"
-    testLogging.showStandardStreams = true
-    forkEvery = 1
+task v8Benchmark(type: JavaExec) {
+    classpath = sourceSets.jmh.runtimeClasspath
+    main = 'org.openjdk.jmh.Main'
+    args '-f', '1', '-bm', 'avgt', '-tu', 'us', 'V8'
 }
 
 task testBenchmark() {}
 testBenchmark.dependsOn sunSpiderBenchmark
 testBenchmark.dependsOn v8Benchmark
 
-task microBenchmark(type: JavaExec) {
-    main "com.google.caliper.runner.CaliperMain"
-    args "-i", "runtime", "org.mozilla.javascript.benchmarks.CaliperObjectBenchmark.FieldAccess", "-DstringKeys=100,1000", "-DintKeys=100,1000"
-    classpath sourceSets.test.runtimeClasspath
+task microBenchmarks(type: JavaExec, description: 'JMH benchmarks') {
+    classpath = sourceSets.jmh.runtimeClasspath
+    main = 'org.openjdk.jmh.Main'
+    args '-f', '1', '-bm', 'avgt', '-tu', 'ns', 'ObjectCall'
 }
 
+task jmhHelp(type: JavaExec, description: 'JMH benchmarks') {
+    classpath = sourceSets.jmh.runtimeClasspath
+    main = 'org.openjdk.jmh.Main'
+    args '-help'
+}
 
 idea {
     module {
@@ -110,8 +128,52 @@ idea {
     }
 }
 
+task runtimeJar(type: Jar) {
+    dependsOn compileJava
+    archiveBaseName = 'rhino-runtime'
+    from sourceSets.main.output
+    excludes = ["org/mozilla/javascript/tools", "org/mozilla/javascript/engine/**", "META-INF/services/**"]
+    manifest {
+        attributes(
+            "Manifest-Version": "1.0",
+            "Implementation-Version": project.version,
+            "Implementation-Title":  "Mozilla Rhino",
+            "Implementation-Vendor": "Mozilla Foundation",
+            "Implementation-URL": "http://www.mozilla.org/rhino",
+            "Built-Date": new Date().format("yyyy-MM-dd"),
+            "Built-Time": new Date().format("HH:mm:ss"),
+            "Bundle-ManifestVersion": "2",
+            "Bundle-SymbolicName": "org.mozilla.rhino-runtime",
+            "Bundle-Version": project.version.replaceAll("-.*", ""),
+            "Export-Package": "org.mozilla.javascript,org.mozilla.javascript.ast,org.mozilla.javascript.annotations"
+        )
+    }
+}
+
+task engineJar(type: Jar) {
+    dependsOn compileJava
+    archiveBaseName = 'rhino-engine'
+    from (sourceSets.main.output) {
+        include 'org/mozilla/javascript/engine/**'
+        include 'META-INF/services/**'
+    }
+    manifest {
+        attributes(
+                "Manifest-Version": "1.0",
+                "Implementation-Version": project.version,
+                "Implementation-Title":  "Mozilla Rhino ScriptEngine",
+                "Implementation-Vendor": "Mozilla Foundation",
+                "Implementation-URL": "http://www.mozilla.org/rhino",
+                "Built-Date": new Date().format("yyyy-MM-dd"),
+                "Built-Time": new Date().format("HH:mm:ss"),
+        )
+    }
+}
+
 jar {
+    dependsOn runtimeJar, engineJar
     from "LICENSE.txt"
+    excludes = ["org/mozilla/javascript/engine/**", "META-INF/services/**"]
     manifest {
         attributes(
             "Manifest-Version": "1.0",
@@ -130,8 +192,6 @@ jar {
     }
 }
 
-
-
 javadoc {
     options.addBooleanOption("-allow-script-in-comments", true)
     options.addStringOption('Xdoclint:html', '-quiet')
@@ -143,11 +203,33 @@ task javadocJar(type: Jar) {
     from javadoc
 }
 
+task runtimeJavadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+    exclude 'org/mozilla/javascript/tools', 'org/mozilla/javascript/engine'
+}
+
+task engineJavadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+    include 'org/mozilla/javascript/engine/**'
+}
 
 task sourceJar(type: Jar) {
     from sourceSets.main.allJava
 }
 
+task runtimeSourceJar(type: Jar) {
+    classifier 'sources'
+    from sourceSets.main.allJava
+    exclude 'org/mozilla/javascript/tools', 'org/mozilla/javascript/engine'
+}
+
+task engineSourceJar(type: Jar) {
+    classifier 'sources'
+    from sourceSets.main.allJava
+    include 'org/mozilla/javascript/engine/**'
+}
 
 publishing {
     publications {
@@ -191,6 +273,81 @@ publishing {
                 classifier "javadoc"
             }
         }
+
+        rhinoruntime(MavenPublication) {
+            groupId 'org.mozilla'
+            artifactId 'rhino-runtime'
+            artifacts = [runtimeJar, runtimeSourceJar, runtimeJavadocJar]
+
+            pom.withXml {
+                def root = asNode()
+
+                root.appendNode('description', """
+    Rhino is an open-source implementation of JavaScript written entirely in Java.
+    It is typically embedded into Java applications to provide scripting to end users.
+""")
+                root.appendNode("url", "https://developer.mozilla.org/en/Rhino")
+
+                def p = root.appendNode("parent")
+                p.appendNode("groupId", "org.sonatype.oss")
+                p.appendNode("artifactId", "oss-parent")
+                p.appendNode("version", "7")
+
+                def l = root.appendNode("licenses").appendNode("license")
+                l.appendNode("name", "Mozilla Public License, Version 2.0")
+                l.appendNode("url", "http://www.mozilla.org/MPL/2.0/index.txt")
+
+                def scm = root.appendNode("scm")
+                scm.appendNode("connection", "scm:git:git@github.com:mozilla/rhino.git")
+                scm.appendNode("developerConnection", "scm:git:git@github.com:mozilla/rhino.git")
+                scm.appendNode("url", "git@github.com:mozilla/rhino.git")
+
+                def o = root.appendNode("organization")
+                o.appendNode("name", "The Mozilla Foundation")
+                o.appendNode("url", "http://www.mozilla.org")
+
+            }
+        }
+
+        rhinoengine(MavenPublication) {
+            groupId 'org.mozilla'
+            artifactId 'rhino-engine'
+            artifacts = [engineJar, engineSourceJar, engineJavadocJar]
+
+            pom.withXml {
+                def root = asNode()
+
+                root.appendNode('description', """
+    Rhino is an open-source implementation of JavaScript written entirely in Java.
+    It is typically embedded into Java applications to provide scripting to end users.
+""")
+                root.appendNode("url", "https://developer.mozilla.org/en/Rhino")
+
+                def p = root.appendNode("parent")
+                p.appendNode("groupId", "org.sonatype.oss")
+                p.appendNode("artifactId", "oss-parent")
+                p.appendNode("version", "7")
+
+                def l = root.appendNode("licenses").appendNode("license")
+                l.appendNode("name", "Mozilla Public License, Version 2.0")
+                l.appendNode("url", "http://www.mozilla.org/MPL/2.0/index.txt")
+
+                def scm = root.appendNode("scm")
+                scm.appendNode("connection", "scm:git:git@github.com:mozilla/rhino.git")
+                scm.appendNode("developerConnection", "scm:git:git@github.com:mozilla/rhino.git")
+                scm.appendNode("url", "git@github.com:mozilla/rhino.git")
+
+                def o = root.appendNode("organization")
+                o.appendNode("name", "The Mozilla Foundation")
+                o.appendNode("url", "http://www.mozilla.org")
+
+                def deps = root.appendNode("dependencies")
+                def rhino = deps.appendNode("dependency")
+                rhino.appendNode("groupId", "org.mozilla")
+                rhino.appendNode("artifactId", "rhino")
+                rhino.appendNode("version", getVersion())
+            }
+        }
     }
 
     if (project.hasProperty("mavenPassword")) {
@@ -210,15 +367,16 @@ publishing {
     }
 }
 
-jacoco {
-    toolVersion = "0.8.3"
+signing {
+    useGpgCmd()
+    sign publishing.publications.rhino
+    sign publishing.publications.rhinoengine
+    sign publishing.publications.rhinoruntime
 }
 
 spotbugs {
-    toolVersion = "3.1.12"
-    effort = "min"
-    reportLevel = "high"
-    sourceSets = [sourceSets.main]
+    effort = "less"
+    reportLevel = "medium"
     excludeFilter = file("./spotbugs-exclude.xml")
 }
 
@@ -231,7 +389,7 @@ jacocoTestReport {
 
 checkstyle {
     configFile = file("${projectDir}/checkstyle.xml")
-    sourceSets = [project.sourceSets.main]
+    sourceSets = [ project.sourceSets.main ]
 }
 
 distributions {
@@ -265,4 +423,4 @@ distributions {
     }
 }
 
-distZip.dependsOn javadoc, jar
+distZip.dependsOn javadoc, jar, sourceJar, runtimeSourceJar

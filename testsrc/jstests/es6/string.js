@@ -22,4 +22,19 @@ load("testsrc/assert.js");
   assertEquals(2, "abcdEfg".search("cd", "not used"));
 })();
 
+(function TestFromCodePoint() {
+    // Text: ☃★♲你
+    assertEquals('\u2603\u2605\u2672\uD87E\uDC04', String.fromCodePoint(0x2603, 0x2605, 0x2672, 0x2F804))
+})();
+
+(function TestTrimStart() {
+    assertEquals("abc ", " abc ".trimStart())
+    assertEquals("abc ", " abc ".trimLeft())
+})();
+
+(function TestTrimEnd() {
+    assertEquals(" abc", " abc ".trimEnd())
+    assertEquals(" abc", " abc ".trimRight())
+})();
+
 "success";

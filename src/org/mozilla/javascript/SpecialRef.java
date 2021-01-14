@@ -87,7 +87,7 @@ class SpecialRef extends Ref
                     Scriptable search = obj;
                     do {
                         if (search == target) {
-                            throw Context.reportRuntimeError1(
+                            throw Context.reportRuntimeErrorById(
                                 "msg.cyclic.value", name);
                         }
                         if (type == SPECIAL_PROTO) {
@@ -98,7 +98,21 @@ class SpecialRef extends Ref
                     } while (search != null);
                 }
                 if (type == SPECIAL_PROTO) {
-                    target.setPrototype(obj);
+                    if (target instanceof ScriptableObject
+                            && !((ScriptableObject)target).isExtensible()
+                            && cx.getLanguageVersion() >= Context.VERSION_1_8) {
+                        throw ScriptRuntime.typeErrorById("msg.not.extensible");
+                    }
+
+                    if (cx.getLanguageVersion() >= Context.VERSION_ES6) {
+                        if ((value != null && !"object".equals(ScriptRuntime.typeof(value))) ||
+                            !"object".equals(ScriptRuntime.typeof(target))) {
+                            return Undefined.instance;
+                        }
+                        target.setPrototype(obj);
+                    } else {
+                        target.setPrototype(obj);
+                    }
                 } else {
                     target.setParentScope(obj);
                 }

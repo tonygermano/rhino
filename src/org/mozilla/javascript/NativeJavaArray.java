@@ -71,7 +71,7 @@ public class NativeJavaArray
         if (result == NOT_FOUND &&
             !ScriptableObject.hasProperty(getPrototype(), id))
         {
-            throw Context.reportRuntimeError2(
+            throw Context.reportRuntimeErrorById(
                 "msg.java.member.not.found", array.getClass().getName(), id);
         }
         return result;
@@ -90,7 +90,7 @@ public class NativeJavaArray
     @Override
     public Object get(Symbol key, Scriptable start) {
         if (SymbolKey.IS_CONCAT_SPREADABLE.equals(key)) {
-            return true;
+            return Boolean.TRUE;
         }
         return Scriptable.NOT_FOUND;
     }
@@ -99,7 +99,7 @@ public class NativeJavaArray
     public void put(String id, Scriptable start, Object value) {
         // Ignore assignments to "length"--it's readonly.
         if (!id.equals("length"))
-            throw Context.reportRuntimeError1(
+            throw Context.reportRuntimeErrorById(
                 "msg.java.array.member.not.found", id);
     }
 
@@ -109,7 +109,7 @@ public class NativeJavaArray
             Array.set(array, index, Context.jsToJava(value, cls));
         }
         else {
-            throw Context.reportRuntimeError2(
+            throw Context.reportRuntimeErrorById(
                 "msg.java.array.index.out.of.bounds", String.valueOf(index),
                 String.valueOf(length - 1));
         }

@@ -159,7 +159,7 @@ public class NativeSymbol
     {
         switch (id) {
         case Id_constructor:
-            initPrototypeMethod(CLASS_NAME, id, "constructor", 1);
+            initPrototypeMethod(CLASS_NAME, id, "constructor", 0);
             break;
         case Id_toString:
             initPrototypeMethod(CLASS_NAME, id, "toString", 0);
@@ -195,7 +195,7 @@ public class NativeSymbol
             if (thisObj == null) {
                 if (cx.getThreadLocal(CONSTRUCTOR_SLOT) == null) {
                     // We should never get to this via "new".
-                    throw ScriptRuntime.typeError0("msg.no.symbol.new");
+                    throw ScriptRuntime.typeErrorById("msg.no.symbol.new");
                 }
                 // Unless we are being called by our own internal "new"
                 return js_constructor(args);
@@ -216,7 +216,7 @@ public class NativeSymbol
         try {
             return (NativeSymbol)thisObj;
         } catch (ClassCastException cce) {
-            throw ScriptRuntime.typeError1("msg.invalid.type", thisObj.getClass().getName());
+            throw ScriptRuntime.typeErrorById("msg.invalid.type", thisObj.getClass().getName());
         }
     }
 
@@ -280,7 +280,7 @@ public class NativeSymbol
 
     // Symbol objects have a special property that one cannot add properties.
 
-    private boolean isStrictMode() {
+    private static boolean isStrictMode() {
         final Context cx = Context.getCurrentContext();
         return (cx != null) && cx.isStrictMode();
     }
@@ -291,7 +291,7 @@ public class NativeSymbol
         if (!isSymbol()) {
             super.put(name, start, value);
         } else if (isStrictMode()) {
-            throw ScriptRuntime.typeError0("msg.no.assign.symbol.strict");
+            throw ScriptRuntime.typeErrorById("msg.no.assign.symbol.strict");
         }
     }
 
@@ -301,7 +301,7 @@ public class NativeSymbol
         if (!isSymbol()) {
             super.put(index, start, value);
         } else if (isStrictMode()) {
-            throw ScriptRuntime.typeError0("msg.no.assign.symbol.strict");
+            throw ScriptRuntime.typeErrorById("msg.no.assign.symbol.strict");
         }
     }
 
@@ -311,7 +311,7 @@ public class NativeSymbol
         if (!isSymbol()) {
             super.put(key, start, value);
         } else if (isStrictMode()) {
-            throw ScriptRuntime.typeError0("msg.no.assign.symbol.strict");
+            throw ScriptRuntime.typeErrorById("msg.no.assign.symbol.strict");
         }
     }
 
@@ -345,6 +345,7 @@ public class NativeSymbol
         return key;
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, NativeSymbol> getGlobalMap() {
         ScriptableObject top = (ScriptableObject)getTopLevelScope(this);
         Map<String, NativeSymbol> map = (Map<String, NativeSymbol>)top.getAssociatedValue(GLOBAL_TABLE_KEY);

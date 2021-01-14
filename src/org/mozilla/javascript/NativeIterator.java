@@ -24,13 +24,17 @@ public final class NativeIterator extends IdScriptableObject {
     public static final BaseFunction JAVA_COLLECTION_ITERATOR = new CollectionIteratorFunction();
     public static final BaseFunction JAVA_MAP_ITERATOR = new MapIteratorFunction();
 
-    static void init(ScriptableObject scope, boolean sealed) {
+    static void init(Context cx, ScriptableObject scope, boolean sealed) {
         // Iterator
         NativeIterator iterator = new NativeIterator();
         iterator.exportAsJSClass(MAX_PROTOTYPE_ID, scope, sealed);
 
         // Generator
-        NativeGenerator.init(scope, sealed);
+        if (cx.getLanguageVersion() >= Context.VERSION_ES6) {
+            ES6Generator.init(scope, sealed);
+        } else {
+            NativeGenerator.init(scope, sealed);
+        }
 
         // StopIteration
         NativeObject obj = new StopIteration();
@@ -71,8 +75,20 @@ public final class NativeIterator extends IdScriptableObject {
     private static final String STOP_ITERATION = "StopIteration";
     public static final String ITERATOR_PROPERTY_NAME = "__iterator__";
 
-    static class StopIteration extends NativeObject {
+    public static class StopIteration extends NativeObject {
         private static final long serialVersionUID = 2485151085722377663L;
+
+        private Object value = Undefined.instance;
+
+        public StopIteration() {}
+
+        public StopIteration(Object val) {
+            this.value = val;
+        }
+
+        public Object getValue() {
+            return value;
+        }
 
         @Override
         public String getClassName() {
@@ -119,10 +135,7 @@ public final class NativeIterator extends IdScriptableObject {
             return jsConstructor(cx, scope, thisObj, args);
         }
 
-        if (!(thisObj instanceof NativeIterator))
-            throw incompatibleCallError(f);
-
-        NativeIterator iterator = (NativeIterator) thisObj;
+        NativeIterator iterator = ensureType(thisObj, NativeIterator.class, f);
 
         switch (id) {
 
@@ -146,7 +159,7 @@ public final class NativeIterator extends IdScriptableObject {
             args[0] == Undefined.instance)
         {
             Object argument = args.length == 0 ? Undefined.instance : args[0];
-            throw ScriptRuntime.typeError1("msg.no.properties",
+            throw ScriptRuntime.typeErrorById("msg.no.properties",
                                            ScriptRuntime.toString(argument));
         }
         Scriptable obj = ScriptRuntime.toObject(cx, scope, args[0]);

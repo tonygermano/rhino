@@ -293,7 +293,7 @@ public class EmbeddedSlotMap
                 if ((slot.getAttributes() & ScriptableObject.PERMANENT) != 0) {
                     Context cx = Context.getContext();
                     if (cx.isStrictMode()) {
-                        throw ScriptRuntime.typeError1("msg.delete.property.with.configurable.false", key);
+                        throw ScriptRuntime.typeErrorById("msg.delete.property.with.configurable.false", key);
                     }
                     return;
                 }
@@ -327,7 +327,7 @@ public class EmbeddedSlotMap
         }
     }
 
-    private void copyTable(ScriptableObject.Slot[] oldSlots, ScriptableObject.Slot[] newSlots)
+    private static void copyTable(ScriptableObject.Slot[] oldSlots, ScriptableObject.Slot[] newSlots)
     {
         for (ScriptableObject.Slot slot : oldSlots) {
             while (slot != null) {
@@ -344,7 +344,7 @@ public class EmbeddedSlotMap
      * This is an optimization to use when inserting into empty table,
      * after table growth or during deserialization.
      */
-    private void addKnownAbsentSlot(ScriptableObject.Slot[] addSlots, ScriptableObject.Slot slot)
+    private static void addKnownAbsentSlot(ScriptableObject.Slot[] addSlots, ScriptableObject.Slot slot)
     {
         final int insertPos = getSlotIndex(addSlots.length, slot.indexOrHash);
         ScriptableObject.Slot old = addSlots[insertPos];

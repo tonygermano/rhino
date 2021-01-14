@@ -1,61 +1,217 @@
-# Rhino 1.7.12-FOC1
-## Dec 13, 2019
+# Rhino 1.7.13
+## September 2, 2020
 
-Aditya*Pal (1):
-* Fix syntax error for comments in array (#607)
+### Script Engine support
 
-Chris*Smith (1):
-* Adding secure configuration for XML parsers (#600)
+Now that Nashorn has been deprecated, a number of people have asked about using
+Rhino with the standard Java "ScriptEngine" interface. This release supports that.
 
-Gregory*Brail (7):
-* Update versions for 1.7.12 release.
-* Fix a code generation bug for generators.
-* Fix "fall through" comment.
-* Fix static analysis around NaN values.
-* More isNaN fixes and one rounding bug.
-* Make XML processor configuration more robust.
-* Enable SpotBugs plugin.
+However, in order to avoid breaking existing code, the script engine is
+shipped in a separate JAR. Use the "rhino-engine" jar along with the
+standard "rhino" jar to include this feature.
 
-Ivan*Di Francesco (1):
-* Fix warnings (#596)
+### Generator Support
 
-RBRi*(2):
-* Fix issue with parseInt's handling of leading zeroes
-* #529 (#628)
+This release supports generators based on the ES6-standard "function *"
+syntaxt.
 
-Roland*Praml (7):
-* #511 fixing InterfaceAdapter abstract name lookup.
-* FIX: NativeJavaObject.getDefaultValue recognizes numbers correctly
-* Merge branch 'ignore-non-default-for-interfaces' into roland
-* ADD: iterator support for iterable & map
-* NEW: support for wrapping lists and maps (with extended type support)
-* FIX: recursion detection: https://github.com/mozilla/rhino/issues/460
-* Improved toJSON conversion
+### Other important changes
 
-Stijn*Kliemesch (5):
-* Private static method ScriptRuntime.enumInitOrder(Context,IdEnumeration) no longer expects given IdEnumeration's property obj to be of type ScriptableObject specifically, only of type SymbolScriptable.
-* Added testclass IterableTest to test iterable implementations, currently with one testcase for a host object, specifically one that uses Array Iterator.
-* Added more tests to IterableTest.
-* Fix for #616 (#617)
-* Fixes for calling several Object.prototype members.
+This release also includes a number of quality and consistency fixes from five contributors.
+As always, check out the [compatibility table](http://mozilla.github.io/rhino/compat/engines.html)
+to see where Rhino stands today.
 
-nename0*(2):
-* Fix Array.include return a wrapped Boolean
-* implement Array.includes to align to specs
+Gregory Brail (18):
+*     Start on 1.7.13.
+*     Add a build config for CircleCi.
+*     Upgrade Gradle version to 6.5.
+*     Update max workers.
+*     Add support for ES6 generators.
+*     Make "GeneratorFunction" pattern work in interpreted mode.
+*     Complete implementation of GeneratorFunction.
+*     Diagnostics to discover test timeouts.
+*     Implement standard Java ScriptEngine
+*     Change MozillaSuiteBenchmark to not fork threads.
+*     Try to improve performance of MozillaSuiteTest
+*     Disable some very slow tests
+*     Start using JMH for benchmarks.
+*     Many small fixes suggested by FindBugs and other linters
+*     Turn off all the Mozilla tests that use the "BigO" function.
+*     Move "BodyCodegen" into a file with the appropriate name.
+*     Add feature flag for changes to Function.__proto__
+*     Make __proto__ more closely match the spec
 
-rbri*(12):
-* fix for Map/Set working with ConsString as key also; closes #583
-* fix propertyIsEnumerable when using an index to access string; closes #582
-* ignore surplus search/match/replace parameters; closes #581
-* add support for setPrototypeOf
-* fixed imports
-* RangeError should be throw if the argument of Number.prototype.toFixed is less than 0 fixes #587
-* fix interpreter fallback when using streams (fixes #592)
-* Parser already always reads the reader into a string. Move this reader handling to the Context to be able to fall back to the interpreter in all cases.
-* fix imports
-* functions declared as var f = function f() {...} within a function should not impact higher scope variable with the same name
-* functions declared as var f = function f() {...} within a function should not impact higher scope variable with the same name
-* fix Boolean(document.all)
+Karl Tauber (2):
+*     Debugger fixes for FlatLaf (https://github.com/JFormDesigner/FlatLaf): - make renderer tree row height same as table row height - increase monospaced font size in script source and evaluation view if L&F uses larger font - remove renderer tree border if L&F sets one (built in L&F do not)
+*     Debugger: fix NPE in variables view when expanding "CallSite"
+
+Sylvain Jermini (7):
+*     improve java.util.{List,Map} interop
+*     travis: switch from trusty to xenial + set explicit -Xss in tests
+*     try to fix circle, increase Xss
+*     Fix failing string.trim.doctest in java11.
+*     NativeDate: DateFormat, use explicit pattern, has the default has changed from java8 to 9. See https://stackoverflow.com/q/53317365
+*     add java11 to travis test matrix
+*     various fixes so the javadoc linter is happy
+
+hjx胡继续 (2):
+*     Add String.fromCodePoint()
+*     fromCharCode optimize
+
+ian4hu (5):
+*     Add String.prototype.trimStart String.prototype.strimEnd
+*     style: code style
+*     test: string test with hex code instead of literal
+*     remove unused StringBuilder
+*     fix tests in test262/built-ins/String/fromCodePoint/*
+
+leela52452 (1):
+*     fix OWASP Cheat Sheet markdown format
+
+RBRi (48):
+*     switch value and done
+*     make some method protected to support rhino-external implementations
+*     NativeArrayBuffer slice() length is 2
+*     fix String.indexOf and String.includes when searching for an empty st… (#747)
+*     fix string.split with limit 0
+*     fix for issue #665 (maybe we have to adjust the version switch to version 1_6)
+*     fix for the recursion detection when converting an array into a string
+*     fix #670
+*     add testcase for issue #656
+*     Symbol.length is 0 fixes #648
+*     add testcase for issue #651
+*     fix type o the expected value
+*     improve seal() and freeze() processing; fixes #174
+*     An error should be thrown when defining a property for a read-only variable in strict mode fixes 573
+*     code cleanup
+*     Do not save/share an instance of NativeArrayBuffer in a static variable. This introduces really strange side effects, because the instance is available (and changeable) from javascript code. These changes are 'persistent' in a way that starting a fresh rhino instance still uses this changed object.
+*     various fixes for array calls using this pattern Array.prototype.foo.call(null, ....);
+*     fix issue #648
+*     fix Object.getOwnPropertyDescriptor for index properties on native strings
+*     Function.__proto__ ignores write access
+*     improved regexp parser based on commit 2164382abe078ea2024b9dff7fe416a78e3a668f from anba
+*     fix handling of undefined parameter value in String.normalize()
+*     it should not be possible to change the [[Prototype]]  of a non-extensible object; some cleanup
+*     add version guard
+*     fix all this-value-not-obj-coercible.js tests for string
+*     checkstyle fixes
+*     fix test suite setup
+*     use the RangeError construction helper
+*     improved handling of negative ArrayBuffer size fixes #708
+*     in ES6 TypedArray constructors are only callable via new
+*     avoid some auto boxing use Double.valueOf instead of new some cleanup try to optimize the code a bit to avoid unnecessary conversations and Double object creation make some methods static
+*     regular expressions are not functions in the context of string replace fixes #726
+*     improved regex range handling
+*     do not inherit strict mode when parsing a function body
+*     code style fix
+*     fix wrong start object for getter in Object.assign
+*     use Undefined.isUndefined()
+*     String.prototype[Symbol.iterator].call(undefined) has to throw because undefined is not coercible
+*     enable more test cases
+*     reduce auto boxing to be able to better control this and avoid boxing if possible
+*     make a bunch  of methods static
+*     code cleanup
+*     make the inner class static (this makes also SpotBugs happy)
+*     Object.setPrototypeOf() arg[0] has to be coercible
+*     fix one more case
+*     match
+*     search
+*     throw if the lastIndex prop of an regex is readonly
+
+# Rhino 1.7.12
+## January 13, 2020
+
+### XML external entities disabled by default
+
+As of this release, Rhino makes "XML external entity injections" more difficult
+by disabling fetching of external DTDs and stylesheets by default,
+as recommended in the [OWASP Cheat Sheet](https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.md). 
+Even though this may break some existing projects, the fact that this
+vulnerability is in the OWASP top 10 makes it important enough to change
+the default.
+
+Developers who still need this old capability can re-enable it by setting the
+Context feature flag FEATURE_ENABLE_XML_SECURE_PARSING to false. (The default
+is true.)
+
+### New JAR for embedding use cases
+
+This release also includes a second JAR artifact, "rhino-runtime.jar". This is
+simply the existing Rhino JAR with the "tools" source directory excluded. 
+This directory includes the Rhino shell as well as the default "Global" 
+object, which includes capabilities to load and process external source
+code.
+
+Since some automated source-scanning tools mark these capabilties as insecure,
+this new JAR provides a way to only include the parts of Rhino that embedders
+typically need without pulling in additional capabilities.
+
+Developers who typically embed "rhino.jar" might consider embedding "rhino-runtime.jar"
+instead if they do not need all this.
+
+Thanks to the following developers for the contributions below!
+
+Aditya Pal (1):
+*     Fix syntax error for comments in array (#607)
+
+Chris Smith (1):
+*     Adding secure configuration for XML parsers (#600)
+
+Gregory Brail (12):
+*     Update versions for 1.7.12 release.
+*     Fix a code generation bug for generators.
+*     Fix "fall through" comment.
+*     Fix static analysis around NaN values.
+*     More isNaN fixes and one rounding bug.
+*     Make XML processor configuration more robust.
+*     Enable SpotBugs plugin.
+*     Fix minor static analysis findings.
+*     Increase Travis timeout.
+*     Disable more flaky "BigO" tests.
+*     Fix handling of "return" in iterators.
+*     Undo setting some members "final".
+
+Ivan Di Francesco (1):
+*     Fix warnings (#596)
+
+Roland Praml (2):
+*     FIX: NativeJavaObject.getDefaultValue recognizes numbers correctly
+*     #511 fixing InterfaceAdapter abstract name lookup.
+
+Stijn Kliemesch (7):
+*     Private static method ScriptRuntime.enumInitOrder(Context,IdEnumeration) no longer expects given IdEnumeration's property obj to be of type ScriptableObject specifically, only of type SymbolScriptable.
+*     Added testclass IterableTest to test iterable implementations, currently with one testcase for a host object, specifically one that uses Array Iterator.
+*     Added more tests to IterableTest.
+*     Fix for #616 (#617)
+*     Fixes for calling several Object.prototype members.
+*     Fixed dynamic scoping for implementations of Object.create and Object.defineProperties
+*     Testcase for dynamic scoping and Object.create.
+
+nename0 (2):
+*     Fix Array.include return a wrapped Boolean
+*     implement Array.includes to align to specs
+
+RBRi (20):
+*     fix for Map/Set working with ConsString as key also; closes #583
+*     fix propertyIsEnumerable when using an index to access string; closes #582
+*     ignore surplus search/match/replace parameters; closes #581
+*     add support for setPrototypeOf
+*     fixed imports
+*     RangeError should be throw if the argument of Number.prototype.toFixed is less than 0 fixes #587
+*     fix interpreter fallback when using streams (fixes #592)
+*     Parser already always reads the reader into a string. Move this reader handling to the Context to be able to fall back to the interpreter in all cases.
+*     fix imports
+*     functions declared as var f = function f() {...} within a function should not impact higher scope variable with the same name
+*     functions declared as var f = function f() {...} within a function should not impact higher scope variable with the same name
+*     fix Boolean(document.all)
+*     many more tests are passing already and some cleanup
+*     add tests for built-ins/ThrowTypeError and built-ins/TypedArray
+*     add tests for built-ins/TypedArrays
+*     fix BYTES_PER_ELEMENT property
+*     fix BYTES_PER_ELEMENT prototype property
+*     fix TypedArray constructor arity
+*     Fix issue with parseInt's handling of leading zeroes
+*     #529 (#628)
 
 # Rhino 1.7.11
 ## May 30, 2019

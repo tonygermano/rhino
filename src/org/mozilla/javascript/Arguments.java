@@ -329,9 +329,10 @@ final class Arguments extends IdScriptableObject
 
     @Override
     protected ScriptableObject getOwnPropertyDescriptor(Context cx, Object id) {
-        if (id instanceof Scriptable) {
-           return super.getOwnPropertyDescriptor(cx, id);
-        }
+      if (ScriptRuntime.isSymbol(id) || id instanceof Scriptable) {
+         return super.getOwnPropertyDescriptor(cx, id);
+      }
+
       double d = ScriptRuntime.toNumber(id);
       int index = (int) d;
       if (d != index) {
@@ -359,6 +360,9 @@ final class Arguments extends IdScriptableObject
                                      ScriptableObject desc,
                                      boolean checkValid) {
       super.defineOwnProperty(cx, id, desc, checkValid);
+      if (ScriptRuntime.isSymbol(id)) {
+        return;
+      }
 
       double d = ScriptRuntime.toNumber(id);
       int index = (int) d;
@@ -427,7 +431,7 @@ final class Arguments extends IdScriptableObject
 
         @Override
         public Object call(Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
-            throw ScriptRuntime.typeError1("msg.arguments.not.access.strict", propertyName);
+            throw ScriptRuntime.typeErrorById("msg.arguments.not.access.strict", propertyName);
         }
     }
 

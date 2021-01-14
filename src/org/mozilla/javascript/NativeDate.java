@@ -172,12 +172,12 @@ final class NativeDate extends IdScriptableObject
                 }
                 Object toISO = ScriptableObject.getProperty(o, toISOString);
                 if (toISO == NOT_FOUND) {
-                    throw ScriptRuntime.typeError2("msg.function.not.found.in",
+                    throw ScriptRuntime.typeErrorById("msg.function.not.found.in",
                             toISOString,
                             ScriptRuntime.toString(o));
                 }
                 if ( !(toISO instanceof Callable) ) {
-                    throw ScriptRuntime.typeError3("msg.isnt.function.in",
+                    throw ScriptRuntime.typeErrorById("msg.isnt.function.in",
                             toISOString,
                             ScriptRuntime.toString(o),
                             ScriptRuntime.toString(toISO));
@@ -185,7 +185,7 @@ final class NativeDate extends IdScriptableObject
                 Object result = ((Callable) toISO).call(cx, scope, o,
                             ScriptRuntime.emptyArgs);
                 if ( !ScriptRuntime.isPrimitive(result) ) {
-                    throw ScriptRuntime.typeError1("msg.toisostring.must.return.primitive",
+                    throw ScriptRuntime.typeErrorById("msg.toisostring.must.return.primitive",
                             ScriptRuntime.toString(result));
                 }
                 return result;
@@ -194,10 +194,7 @@ final class NativeDate extends IdScriptableObject
         }
 
         // The rest of Date.prototype methods require thisObj to be Date
-
-        if (!(thisObj instanceof NativeDate))
-            throw incompatibleCallError(f);
-        NativeDate realThis = (NativeDate)thisObj;
+        NativeDate realThis = ensureType(thisObj, NativeDate.class, f);
         double t = realThis.date;
 
         switch (id) {
@@ -368,8 +365,8 @@ final class NativeDate extends IdScriptableObject
             if (!Double.isNaN(t)) {
                 return js_toISOString(t);
             }
-            String msg = ScriptRuntime.getMessage0("msg.invalid.date");
-            throw ScriptRuntime.constructError("RangeError", msg);
+            String msg = ScriptRuntime.getMessageById("msg.invalid.date");
+            throw ScriptRuntime.rangeError(msg);
 
           default: throw new IllegalArgumentException(String.valueOf(id));
         }
@@ -1757,13 +1754,12 @@ final class NativeDate extends IdScriptableObject
     /* cached values */
     private static final TimeZone thisTimeZone = TimeZone.getDefault();
     private static final double LocalTZA = thisTimeZone.getRawOffset();
+
+    //not thread safe
     private static final DateFormat timeZoneFormatter = new SimpleDateFormat("zzz");
-    private static final DateFormat localeDateTimeFormatter =
-        DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG);
-    private static final DateFormat localeDateFormatter =
-        DateFormat.getDateInstance(DateFormat.LONG);
-    private static final DateFormat localeTimeFormatter =
-        DateFormat.getTimeInstance(DateFormat.LONG);
+    private static final DateFormat localeDateTimeFormatter = new SimpleDateFormat("MMMM d, yyyy h:mm:ss a z");
+    private static final DateFormat localeDateFormatter = new SimpleDateFormat("MMMM d, yyyy");
+    private static final DateFormat localeTimeFormatter = new SimpleDateFormat("h:mm:ss a z");
 
     private double date;
 }

@@ -106,7 +106,7 @@ public class WrapFactory
      * <p>
      * {@link #wrap(Context, Scriptable, Object, Class)} and
      * {@link #wrapNewObject(Context, Scriptable, Object)} call this method
-     * when they can not convert <tt>javaObject</tt> to JavaScript primitive
+     * when they can not convert <code>javaObject</code> to JavaScript primitive
      * value or JavaScript array.
      * <p>
      * Subclasses can override the method to provide custom wrappers
@@ -121,10 +121,10 @@ public class WrapFactory
     public Scriptable wrapAsJavaObject(Context cx, Scriptable scope,
                                        Object javaObject, Type staticType)
     {
-        if (javaObject instanceof Map) {
+        if (javaObject instanceof List) {
+            return new NativeJavaList(scope, (List)javaObject, staticType);
+        } else if (javaObject instanceof Map) {
             return new NativeJavaMap(scope, (Map) javaObject, staticType);
-        } else if (javaObject instanceof List) {
-            return new NativeJavaList(scope, (List) javaObject, staticType);
         } else {
             return new NativeJavaObject(scope, javaObject, staticType);
         }

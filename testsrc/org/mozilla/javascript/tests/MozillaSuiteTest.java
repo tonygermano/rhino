@@ -16,8 +16,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,11 +49,22 @@ public class MozillaSuiteTest {
     private final File jsFile;
     private final int optimizationLevel;
 
-    static final int[] OPT_LEVELS = { -1, 0, 9 };
+    private static final int[] OPT_LEVELS;
+
+    static {
+        // Reduce the number of tests that we run by a factor of three...
+        String overriddenLevel = System.getProperty("TEST_OPTLEVEL");
+        if (overriddenLevel != null) {
+            OPT_LEVELS = new int[]{Integer.parseInt(overriddenLevel)};
+        } else {
+            OPT_LEVELS = new int[]{-1, 0, 9};
+        }
+    }
 
     public MozillaSuiteTest(File jsFile, int optimizationLevel) {
         this.jsFile = jsFile;
         this.optimizationLevel = optimizationLevel;
+        ShellTest.cacheFramework();
     }
 
     public static File getTestDir() throws IOException {
@@ -183,8 +192,8 @@ public class MozillaSuiteTest {
         }
 
         @Override
-        public final void timedOut() {
-            failed("Timed out.");
+        public final void timedOut(long timeoutMillis) {
+            failed("Timed out (timeout = " + timeoutMillis + "(");
         }
     }
 
@@ -196,7 +205,7 @@ public class MozillaSuiteTest {
         shellContextFactory.setOptimizationLevel(optimizationLevel);
         ShellTestParameters params = new ShellTestParameters();
         JunitStatus status = new JunitStatus();
-        ShellTest.run(shellContextFactory, jsFile, params, status);
+        ShellTest.runNoFork(shellContextFactory, jsFile, params, status);
     }
 
 
