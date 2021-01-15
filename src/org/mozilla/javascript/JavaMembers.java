@@ -959,6 +959,7 @@ class ToJsonFunction extends BaseFunction
             return thisObj;
         }
         Object jo = ((NativeJavaObject) thisObj).javaObject;
+       
         if (jo instanceof Number
                 || jo instanceof CharSequence 
                 || jo instanceof Boolean
@@ -967,7 +968,7 @@ class ToJsonFunction extends BaseFunction
             return jo;
         } else if (jo instanceof Enum) {
             return ((Enum<?>) jo).name();
-        } else if (jo instanceof java.sql.Date) {
+        } else if (jo instanceof java.sql.Date) { // Date-Time handling.
             jo = ((java.sql.Date) jo).toLocalDate();
         } else if (jo instanceof java.sql.Time) {
             jo = ((java.sql.Time) jo).toLocalTime();

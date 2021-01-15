@@ -4,39 +4,67 @@
 
 package org.mozilla.javascript.tests;
 
-import java.util.ArrayList;
-import java.util.Comparator;
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.Wrapper;
 
-import junit.framework.TestCase;
 
 /*
  * This testcase tests the basic access to Java classess implementing Iterable
  * (eg. ArrayList)
  */
-public class JavaMapIteratorTest extends TestCase {
+@RunWith(Parameterized.class)
+public class JavaMapIteratorTest {
 
     private static final String EXPECTED_VALUES = "7,2,5,";
     private static final String EXPECTED_KEYS = "foo,bar,baz,";
     
-    private Map<String, Integer> createJavaMap() {
+    @Parameters
+    public static Collection<Map<?,?>> data() {
+        return Arrays.asList(new Map[] {
+            mapWithEnumKey(),
+            mapWithStringKey() 
+        });
+    }
+    private static Map<String, Integer> mapWithStringKey() {
         Map<String, Integer> map = new LinkedHashMap<>();
         map.put("foo", 7);
         map.put("bar", 2);
         map.put("baz", 5);
         return map;
     }
+    public  enum MyEnum {
+      foo, bar, baz
+    }
+    private static Map<MyEnum, Integer> mapWithEnumKey() {
+      Map<MyEnum, Integer> map = new EnumMap<>(MyEnum.class);
+      map.put(MyEnum.foo, 7);
+      map.put(MyEnum.bar, 2);
+      map.put(MyEnum.baz, 5);
+      return map;
+    }
 
+    private Map<?, ?> map;
 
+    public JavaMapIteratorTest(Map<?,?> map) {
+        this.map = map;
+    }
+
+    // iterate over all values with 'for each'
     @Test
-    public void testArrayForEach() {
+    public void testForEachValue() {
         String js = "var ret = '';\n"
                 + "for each(value in map)  ret += value + ',';\n"
                 + "ret";
@@ -44,8 +72,9 @@ public class JavaMapIteratorTest extends TestCase {
         testJavaMap(js, EXPECTED_VALUES);
     }
 
+    // iterate over all keys and concatenate them
     @Test
-    public void testArrayForKeys() {
+    public void testForKey() {
         String js = "var ret = '';\n"
                 + "for(key in map)  ret += key + ',';\n"
                 + "ret";
@@ -53,8 +82,9 @@ public class JavaMapIteratorTest extends TestCase {
         testJavaMap(js, EXPECTED_KEYS);
     }
 
+    // iterate over all keys and try to read the map value
     @Test
-    public void testMapWithAccess2() {
+    public void testForKeyWithGet() {
         String js = "var ret = '';\n"
                 + "for(key in map)  ret += map[key] + ',';\n"
                 + "ret";
@@ -62,6 +92,7 @@ public class JavaMapIteratorTest extends TestCase {
         testJavaMap(js, EXPECTED_VALUES);
     }
 
+    // invoke map.forEach function.
     // NOTE: signature of forEach is different
     // EcmaScript Map: forEach(value, key, map)
     // Java: forEach(key, value)
@@ -89,10 +120,18 @@ public class JavaMapIteratorTest extends TestCase {
         testJavaMap(js, EXPECTED_VALUES); 
     }
     
+    @Test
+    public void testObjectKeys() {
+        String js = "Object.keys(map).join(',')+',';\n";
+        testJavaMap(js, EXPECTED_KEYS); 
+        testJsMap(js, EXPECTED_KEYS); 
+    }
+    
     private void testJavaMap(String script, Object expected) {
         Utils.runWithAllOptimizationLevels(cx -> {
+            cx.setLanguageVersion(Context.VERSION_ES6);
             final ScriptableObject scope = cx.initStandardObjects();
-            scope.put("map", scope, createJavaMap());
+            scope.put("map", scope, map);
             Object o = cx.evaluateString(scope, script,
                     "testJavaMap.js", 1, null);
             assertEquals(expected, o);
@@ -105,7 +144,7 @@ public class JavaMapIteratorTest extends TestCase {
         Utils.runWithAllOptimizationLevels(cx -> {
             final ScriptableObject scope = cx.initStandardObjects();
             Scriptable obj = cx.newObject(scope);
-            createJavaMap().forEach((key,value)->obj.put(key, obj, value));
+            map.forEach((key,value)->obj.put(String.valueOf(key), obj, value));
             scope.put("map", scope, obj);
             Object o = cx.evaluateString(scope, script,
                     "testJsMap.js", 1, null);

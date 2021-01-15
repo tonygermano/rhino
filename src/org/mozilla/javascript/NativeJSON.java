@@ -342,7 +342,7 @@ public final class NativeJSON extends IdScriptableObject
         if (value instanceof Wrapper) {
             trackValue = ((Wrapper) value).unwrap();
         }
-        if (state.stack.search(value) != -1) {
+        if (state.stack.search(trackValue) != -1) {
             throw ScriptRuntime.typeErrorById("msg.cyclic.value", trackValue.getClass().getName());
         }
         state.stack.push(trackValue);

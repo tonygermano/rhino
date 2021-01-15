@@ -3,120 +3,136 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 package org.mozilla.javascript;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
-/**
- * Extends the NativeJavaMap to support map based access.
- *
- * @author Roland Praml, FOCONIS AG
- *
- */
-public class NativeJavaMap<T> extends NativeJavaObject implements Map<String, T> {
-
-    private static final long serialVersionUID = 1L;
-    private Map<String, T> javaMap;
+public class NativeJavaMap extends NativeJavaObject {
+    
+    private static final long serialVersionUID = 46513864372878618L;
+    
+    private Map<Object, Object> map;
+    private Class<?> keyType;
     private Class<?> valueType;
+    private transient Map<String, Object> keyTranslationMap;
 
-    public NativeJavaMap() {
-        super();
-    }
-
-    public NativeJavaMap(Scriptable scope, Map<String, T> javaMap,
-            Type staticType, boolean isAdapter) {
-        super(scope, javaMap, staticType, isAdapter);
-        this.javaMap = javaMap;
+    @SuppressWarnings("unchecked")
+    public NativeJavaMap(Scriptable scope, Object map, Type staticType) {
+        super(scope, map, staticType);
+        assert map instanceof Map;
+        this.map = (Map<Object, Object>) map;
         if (staticType == null) {
-            staticType = javaMap.getClass().getGenericSuperclass();
+            staticType = map.getClass().getGenericSuperclass();
         }
-
         if (staticType instanceof ParameterizedType) {
-            Type type = ((ParameterizedType) staticType)
-                    .getActualTypeArguments()[1];
-            this.valueType = ScriptRuntime.getRawType(type);
+            Type[] types = ((ParameterizedType) staticType).getActualTypeArguments();
+            this.keyType = ScriptRuntime.getRawType(types[0]);
+            this.valueType = ScriptRuntime.getRawType(types[1]);
         } else {
+            this.keyType = Object.class;
             this.valueType = Object.class;
         }
-        
-    }
-
-    public NativeJavaMap(Scriptable scope, Map<String, T> javaMap,
-            Type staticType) {
-        this(scope, javaMap, staticType, false);
     }
 
     @Override
-    public Object[] getIds() {
-        return javaMap.keySet().toArray();
+    public String getClassName() {
+        return "JavaMap";
+    }
+
+
+    @Override
+    public boolean has(String name, Scriptable start) {
+        if (map.containsKey(toKey(name, false))) {
+            return true;
+        }
+        return super.has(name, start);
+    }
+
+    @Override
+    public boolean has(int index, Scriptable start) {
+        if (map.containsKey(toKey(index, false))) {
+            return true;
+        }
+        return super.has(index, start);
+    }
+
+    @Override
+    public Object get(String name, Scriptable start) {
+        Object key = toKey(name, false);
+        if (map.containsKey(key)) {
+            Context cx = Context.getContext();
+            Object obj = map.get(key);
+            if (obj == null) {
+                return null;
+            }
+            return cx.getWrapFactory().wrap(cx, this, obj, obj.getClass());
+        }
+        return super.get(name, start);
+    }
+
+    @Override
+    public Object get(int index, Scriptable start) {
+        if (map.containsKey(toKey(index, false))) {
+            Context cx = Context.getContext();
+            Object obj = map.get(Integer.valueOf(index));
+            if (obj == null) {
+                return null;
+            }
+            return cx.getWrapFactory().wrap(cx, this, obj, obj.getClass());
+        }
+        return super.get(index, start);
     }
     
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public Object get(String name, Scriptable start) {
-        Object rval = super.get(name, start);
-        if (rval == null || rval == Scriptable.NOT_FOUND) {
-            rval = ((Map)javaMap).getOrDefault(name, Scriptable.NOT_FOUND);
-            if (rval != null && rval != Scriptable.NOT_FOUND) {
-                // Need to wrap the object before we return it.
-                Scriptable scope = ScriptableObject.getTopLevelScope(this);
-                Context cx = Context.getContext();
-                return cx.getWrapFactory().wrap(cx, scope, rval, valueType);
-            }
+    private Object toKey(String key, boolean translateNew) {
+        if (keyType == String.class) {
+            return key;
         }
-        return rval;
+        if (keyTranslationMap == null) {
+            keyTranslationMap = new HashMap<>();
+            map.keySet().forEach(k -> keyTranslationMap.put(ScriptRuntime.toString(k), k));
+        }
+        
+        Object ret = keyTranslationMap.get(key);
+        if (ret == null && translateNew) {
+            ret = Context.jsToJava(key, keyType);
+            keyTranslationMap.put(key, ret);
+        }
+        return ret;
+    }
+    
+    private Object toKey(int key, boolean translateNew) {
+        return toKey(ScriptRuntime.toString(key), translateNew);
+    }
+    
+    private Object toValue(Object value) {
+        return Context.jsToJava(value, valueType);
     }
 
     @Override
     public void put(String name, Scriptable start, Object value) {
-        if (members.has(name, false)) {
-            super.put(name, start, value);
-        } else if (value == Undefined.instance) {
-            javaMap.remove(name);
-        } else {
-            javaMap.put(name, (T) Context.jsToJava(value, valueType));
-        }
+        map.put(toKey(name, true), toValue(value));
     }
 
-    // delegate methods
-    public int size()                                              { return javaMap.size(); }
-    public boolean isEmpty()                                       { return javaMap.isEmpty(); }
-    public boolean containsKey(Object key)                         { return javaMap.containsKey(key); }
-    public boolean containsValue(Object value)                     { return javaMap.containsValue(value); }
-    public T get(Object key)                                       { return javaMap.get(key); }
-    public T put(String key, T value)                              { return javaMap.put(key, value); }
-    public T remove(Object key)                                    { return javaMap.remove(key); }
-    public void putAll(Map<? extends String, ? extends T> m)       { javaMap.putAll(m); }
-    public void clear()                                            { javaMap.clear(); }
-    public Set<String> keySet()                                    { return javaMap.keySet(); }
-    public Collection<T> values()                                  { return javaMap.values(); }
-    public Set<Entry<String, T>> entrySet()                        { return javaMap.entrySet(); }
-    public boolean equals(Object o)                                { return javaMap.equals(o); }
-    public int hashCode()                                          { return javaMap.hashCode(); }
-    public T getOrDefault(Object key, T defaultValue)              { return javaMap.getOrDefault(key, defaultValue); }
-    public T putIfAbsent(String key, T value)                      { return javaMap.putIfAbsent(key, value); }
-    public boolean remove(Object key, Object value)                { return javaMap.remove(key, value); }
-    public boolean replace(String key, T oldValue, T newValue)     { return javaMap.replace(key, oldValue, newValue); }
-    public T replace(String key, T value)                          { return javaMap.replace(key, value); }
-    public void forEach(BiConsumer<? super String, ? super T> action)
-                    { javaMap.forEach(action); }
-    public void replaceAll(BiFunction<? super String, ? super T, ? extends T> function)
-                    { javaMap.replaceAll(function); }
-    public T computeIfAbsent(String key, Function<? super String, ? extends T> mappingFunction)
-                    { return javaMap.computeIfAbsent(key, mappingFunction); }
-    public T computeIfPresent(String key, BiFunction<? super String, ? super T, ? extends T> remappingFunction)
-                    { return javaMap.computeIfPresent(key, remappingFunction); }
-    public T compute(String key, BiFunction<? super String, ? super T, ? extends T> remappingFunction)
-                    { return javaMap.compute(key, remappingFunction); }
-    public T merge(String key, T value, BiFunction<? super T, ? super T, ? extends T> remappingFunction)
-                    { return javaMap.merge(key, value, remappingFunction); }
+    @Override
+    public void put(int index, Scriptable start, Object value) {
+        map.put(toKey(index, true), toValue(value));
+    }
 
+    @Override
+    public Object[] getIds() {
+        Object[] ids = new Object[map.size()];
+        int i = 0;
+        for (Object key : map.keySet()) {
+            if (key instanceof Number) {
+                ids[i++] = (Number)key;
+            } else {
+                ids[i++] = ScriptRuntime.toString(key);
+            }
+        }
+        return ids;
+    }
 
 }

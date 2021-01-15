@@ -122,9 +122,9 @@ public class WrapFactory
                                        Object javaObject, Type staticType)
     {
         if (javaObject instanceof List) {
-            return new NativeJavaList(scope, (List)javaObject, staticType);
+            return new NativeJavaList(scope, javaObject, staticType);
         } else if (javaObject instanceof Map) {
-            return new NativeJavaMap(scope, (Map) javaObject, staticType);
+            return new NativeJavaMap(scope, javaObject, staticType);
         } else {
             return new NativeJavaObject(scope, javaObject, staticType);
         }
