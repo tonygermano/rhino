@@ -42,14 +42,6 @@ public class NativeJavaList extends NativeJavaObject implements ArrayScriptable 
 
 
     @Override
-    public boolean has(String name, Scriptable start) {
-        if (name.equals("length")) {
-            return true;
-        }
-        return super.has(name, start);
-    }
-
-    @Override
     public boolean has(int index, Scriptable start) {
         if (isWithValidIndex(index)) {
             return true;
@@ -63,14 +55,6 @@ public class NativeJavaList extends NativeJavaObject implements ArrayScriptable 
             return true;
         }
         return super.has(key, start);
-    }
-
-    @Override
-    public Object get(String name, Scriptable start) {
-        if ("length".equals(name)) {
-            return Integer.valueOf(list.size());
-        }
-        return super.get(name, start);
     }
 
     @Override

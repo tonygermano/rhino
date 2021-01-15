@@ -4,6 +4,7 @@
 
 package org.mozilla.javascript.tests;
 
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,8 +36,7 @@ public class JavaIterableIteratorTest extends TestCase {
     @Parameters
     public static Collection<Iterable<Object>> data() {
         return Arrays.asList(new Iterable[] {
-            arrayList()
-            //linkedHashSet(), iterable()
+            arrayList(), linkedHashSet(), iterable(), collection()
         });
     }
 
@@ -58,14 +58,31 @@ public class JavaIterableIteratorTest extends TestCase {
     }
 
     private static Iterable<Object> iterable() {
-      return new Iterable<Object>() {
+        return new Iterable<Object>() {
+          
+            @Override
+            public Iterator<Object> iterator() {
+                return arrayList().iterator();
+            }
+        };
+    }
+    
+    private static Collection<Object> collection() {
+      return new AbstractCollection<Object>() {
         
         @Override
         public Iterator<Object> iterator() {
           return arrayList().iterator();
         }
+
+        @Override
+        public int size() {
+          return arrayList().size();
+        }
       };
-  }
+    }
+    
+    
     @Test
     public void testArrayIterator() {
         String js = "var ret = '';\n"
@@ -92,7 +109,9 @@ public class JavaIterableIteratorTest extends TestCase {
                 + "for(elem in list)  ret += elem + ',';\n"
                 + "ret";
         testJsArrayIterate(js, "0,1,2,");
-        testJavaObjectIterate(js, "0,1,2,");
+        if (iterable instanceof Collection) {
+            testJavaObjectIterate(js, "0,1,2,");
+        }
         testJavaArrayIterate(js, "0,1,2,");
     }
 
@@ -103,7 +122,9 @@ public class JavaIterableIteratorTest extends TestCase {
                 + "ret";
         testJsArrayIterate(js, "0,1,2,");
         testJavaArrayIterate(js, "0,1,2,");
-        testJavaObjectIterate(js, "0,1,2,");
+        if (iterable instanceof Collection) {
+            testJavaObjectIterate(js, "0,1,2,");
+        }
     }
 
     // use NativeJavaArray
