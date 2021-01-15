@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Date;
 import java.util.Map;
 
@@ -35,17 +36,17 @@ public class NativeJavaObject
     public NativeJavaObject() { }
 
     public NativeJavaObject(Scriptable scope, Object javaObject,
-                            Class<?> staticType)
+                            Type staticType)
     {
         this(scope, javaObject, staticType, false);
     }
 
     public NativeJavaObject(Scriptable scope, Object javaObject,
-                            Class<?> staticType, boolean isAdapter)
+                            Type staticType, boolean isAdapter)
     {
         this.parent = scope;
         this.javaObject = javaObject;
-        this.staticType = staticType;
+        this.staticType = ScriptRuntime.getRawType(staticType);
         this.isAdapter = isAdapter;
         initMembers();
     }
