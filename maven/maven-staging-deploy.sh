@@ -30,20 +30,20 @@ then
   exit 3
 fi
 
-mvn gpg:sign-and-deploy-file \
+mvn deploy:deploy-file \
   -Dfile=${jsjar} \
   -DpomFile=${pom} \
   -DrepositoryId=sonatype-nexus-staging \
   -Durl=sftp://bamboo@repo.foconis.de/var/www/html/repo/maven-release/
 
-mvn gpg:sign-and-deploy-file \
+mvn deploy:deploy-file \
   -Dfile=${srczip} \
   -DpomFile=${pom} \
   -DrepositoryId=sonatype-nexus-staging \
   -Durl=sftp://bamboo@repo.foconis.de/var/www/html/repo/maven-release/  \
   -Dclassifier=sources
 
-mvn gpg:sign-and-deploy-file \
+mvn deploy:deploy-file \
   -Dfile=${doczip} \
   -DpomFile=${pom} \
   -DrepositoryId=sonatype-nexus-staging \
