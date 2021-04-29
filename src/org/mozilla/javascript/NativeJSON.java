@@ -9,8 +9,8 @@ package org.mozilla.javascript;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import org.mozilla.javascript.json.JsonParser;
@@ -198,7 +198,7 @@ public final class NativeJSON extends IdScriptableObject {
                 String indent,
                 String gap,
                 Callable replacer,
-                List<Object> propertyList) {
+                Collection<Object> propertyList) {
             this.cx = cx;
             this.scope = scope;
 
@@ -212,7 +212,7 @@ public final class NativeJSON extends IdScriptableObject {
         String indent;
         String gap;
         Callable replacer;
-        List<Object> propertyList;
+        Collection<Object> propertyList;
 
         Context cx;
         Scriptable scope;
@@ -223,19 +223,21 @@ public final class NativeJSON extends IdScriptableObject {
         String indent = "";
         String gap = "";
 
-        List<Object> propertyList = null;
+        Collection<Object> propertyList = null;
         Callable replacerFunction = null;
 
         if (replacer instanceof Callable) {
             replacerFunction = (Callable) replacer;
         } else if (replacer instanceof NativeArray) {
-            propertyList = new LinkedList<Object>();
+            propertyList = new LinkedHashSet<Object>();
             NativeArray replacerArray = (NativeArray) replacer;
             for (int i : replacerArray.getIndexIds()) {
                 Object v = replacerArray.get(i, replacerArray);
-                if (v instanceof String || v instanceof Number) {
+                if (v instanceof String) {
                     propertyList.add(v);
-                } else if (v instanceof NativeString || v instanceof NativeNumber) {
+                } else if (v instanceof Number
+                        || v instanceof NativeString
+                        || v instanceof NativeNumber) {
                     propertyList.add(ScriptRuntime.toString(v));
                 }
             }
@@ -374,12 +376,18 @@ public final class NativeJSON extends IdScriptableObject {
         state.indent = state.indent + state.gap;
         Object[] k = null;
         if (state.propertyList != null) {
-            k = state.propertyList.toArray();
+            k = new Object[state.propertyList.size()];
+            int i = 0;
+            for (Object prop : state.propertyList) {
+                ScriptRuntime.StringIdOrIndex idOrIndex =
+                        ScriptRuntime.toStringIdOrIndex(state.cx, prop);
+                k[i++] = idOrIndex.stringId == null ? idOrIndex.index : idOrIndex.stringId;
+            }
         } else {
             k = value.getIds();
         }
 
-        List<Object> partial = new LinkedList<Object>();
+        Collection<Object> partial = new LinkedList<Object>();
 
         for (Object p : k) {
             Object strP = str(p, value, state);
@@ -420,7 +428,7 @@ public final class NativeJSON extends IdScriptableObject {
 
         String stepback = state.indent;
         state.indent = state.indent + state.gap;
-        List<Object> partial = new LinkedList<Object>();
+        Collection<Object> partial = new LinkedList<Object>();
 
         long len = value.getLength();
         for (long index = 0; index < len; index++) {
